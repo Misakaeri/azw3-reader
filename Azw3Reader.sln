@@ -1,0 +1,34 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{954FD9E4-BBC0-406F-9B44-DA936C54AFE6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Azw3Reader.Core", "src\Azw3Reader.Core\Azw3Reader.Core.csproj", "{936A36D1-71BB-4FFD-975E-80542119FB8A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Azw3Reader.App", "src\Azw3Reader.App\Azw3Reader.App.csproj", "{A22F79D2-97B1-43FF-A2A3-62932C8D3904}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{936A36D1-71BB-4FFD-975E-80542119FB8A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{936A36D1-71BB-4FFD-975E-80542119FB8A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{936A36D1-71BB-4FFD-975E-80542119FB8A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{936A36D1-71BB-4FFD-975E-80542119FB8A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A22F79D2-97B1-43FF-A2A3-62932C8D3904}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A22F79D2-97B1-43FF-A2A3-62932C8D3904}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A22F79D2-97B1-43FF-A2A3-62932C8D3904}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A22F79D2-97B1-43FF-A2A3-62932C8D3904}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{936A36D1-71BB-4FFD-975E-80542119FB8A} = {954FD9E4-BBC0-406F-9B44-DA936C54AFE6}
+		{A22F79D2-97B1-43FF-A2A3-62932C8D3904} = {954FD9E4-BBC0-406F-9B44-DA936C54AFE6}
+	EndGlobalSection
+EndGlobal

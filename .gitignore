@@ -1,0 +1,45 @@
+## .NET
+bin/
+obj/
+*.user
+*.suo
+*.sln.docstates
+*.rsuser
+[Dd]ebug/
+[Rr]elease/
+
+## Visual Studio
+.vs/
+*.csproj.user
+*.dbmdl
+*.jfm
+
+## JetBrains Rider
+.idea/
+*.sln.iml
+
+## VS Code
+.vscode/
+
+## NuGet
+packages/
+*.nupkg
+**/[Pp]ackages/*
+!**/[Pp]ackages/build/
+*.nuget.props
+*.nuget.targets
+
+## WebView2 cache
+*.WebView2/
+
+## Runtime / build artifacts
+_ReSharper*/
+
+## OS files
+Thumbs.db
+*.DS_Store
+
+## Project-specific
+dist/
+
+.claude
