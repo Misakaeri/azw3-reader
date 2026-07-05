@@ -85,37 +85,55 @@ public class Azw3Extractor
 
     private void ExtractPalmDocContent(byte[] fileData, PdbHeader pdb, MobiHeader mobi, ExtractionResult result)
     {
-        var textBuffers = new List<byte[]>();
         int imgStart = (int)mobi.FirstImageIndex;
 
-        // 如果没有图片索引信息，尝试从记录总数推断
         if (imgStart <= 0 || imgStart > pdb.Records.Count)
             imgStart = pdb.Records.Count;
 
-        // 提取文本记录 (PalmDoc 压缩)
-        for (int i = 0; i < imgStart && i < pdb.Records.Count; i++)
+        // 共享输出缓冲区，使 LZ77 回溯引用能跨 record 正常工作
+        using var output = new MemoryStream((int)mobi.TextLength);
+
+        // Record 0: 跳过 MOBI/EXTH 头部，只解压尾部的 PalmDoc 压缩文本
+        byte[] raw0 = ReadRecordData(fileData, pdb.Records[0]);
+        int exthEnd = FindExthEndOffset(raw0);
+        if (exthEnd < raw0.Length)
+        {
+            byte[] record0Text = raw0[exthEnd..];
+            _palmDocDecompressor.DecompressContinue(record0Text, output);
+        }
+
+        // Records 1+: 逐条解压到共享 buffer
+        for (int i = 1; i < imgStart && i < pdb.Records.Count; i++)
         {
             byte[] raw = ReadRecordData(fileData, pdb.Records[i]);
-            // PalmDoc 压缩: 每条记录独立解压
-            int uncompLen = (i == 0) ? 0 : (int)mobi.TextLength;
-            var decompressed = _palmDocDecompressor.Decompress(raw, uncompLen);
-            textBuffers.Add(decompressed);
+            _palmDocDecompressor.DecompressContinue(raw, output);
         }
 
-        // 拼接所有文本记录
-        int totalLen = textBuffers.Sum(b => b.Length);
-        byte[] allText = new byte[totalLen];
-        int offset = 0;
-        foreach (var buf in textBuffers)
-        {
-            Buffer.BlockCopy(buf, 0, allText, offset, buf.Length);
-            offset += buf.Length;
-        }
-
+        byte[] allText = output.ToArray();
         result.FullHtml = DecodeBookText(allText, mobi.TextEncoding);
 
-        // 提取图片
         ExtractImages(fileData, pdb, imgStart, result);
+    }
+
+    /// <summary>找到 record 0 中 EXTH 记录块的结束偏移，之后为 PalmDoc 压缩文本。</summary>
+    private static int FindExthEndOffset(byte[] record0)
+    {
+        for (int i = 0; i < record0.Length - 12; i++)
+        {
+            if (record0[i] == 'E' && record0[i + 1] == 'X' && record0[i + 2] == 'T' && record0[i + 3] == 'H')
+            {
+                uint recordCount = BigEndian.ToUInt32(record0, i + 8);
+                int end = i + 12;
+                for (int j = 0; j < recordCount && end + 8 <= record0.Length; j++)
+                {
+                    uint len = BigEndian.ToUInt32(record0, end + 4);
+                    end += (int)len;
+                }
+                return Math.Min(end, record0.Length);
+            }
+        }
+        // 找不到 EXTH 时回退到跳过整个 record 0
+        return record0.Length;
     }
 
     private void ExtractHuffCdicContent(byte[] fileData, PdbHeader pdb, MobiHeader mobi, ExtractionResult result)

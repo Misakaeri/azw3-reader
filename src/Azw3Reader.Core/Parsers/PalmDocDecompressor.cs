@@ -17,6 +17,22 @@ public class PalmDocDecompressor
         if (compressed.Length == 0) return [];
 
         using var output = new MemoryStream(uncompressedSize > 0 ? uncompressedSize : compressed.Length * 3);
+        DecompressCore(compressed, output);
+        return output.ToArray();
+    }
+
+    /// <summary>
+    /// 将压缩数据解压到已有输出流中（共享缓冲区）。
+    /// PalmDoc LZ77 回溯引用可跨 record 工作，因为 output stream 包含了前面所有 record 的解压数据。
+    /// </summary>
+    public void DecompressContinue(byte[] compressed, MemoryStream output)
+    {
+        if (compressed.Length == 0) return;
+        DecompressCore(compressed, output);
+    }
+
+    private static void DecompressCore(byte[] compressed, MemoryStream output)
+    {
         int p = 0;
 
         try
@@ -62,7 +78,7 @@ public class PalmDocDecompressor
                     }
                     else
                     {
-                        // 距离超出已有数据时跳过 (一般不会发生)
+                        // 距离超出已有数据时用空格填充
                         for (int i = 0; i < len; i++)
                             output.WriteByte(0x20);
                     }
@@ -73,7 +89,5 @@ public class PalmDocDecompressor
         {
             // 部分损坏的数据截断时返回已有结果
         }
-
-        return output.ToArray();
     }
 }
