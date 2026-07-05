@@ -1,5 +1,6 @@
 using Azw3Reader.App.Services;
 using Azw3Reader.Core.Models;
+using Microsoft.Web.WebView2.Wpf;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
@@ -13,6 +14,7 @@ public partial class BookReaderControl : UserControl
     private readonly ReadingProgressService _progress = new();
 
     private ExtractionResult? _book;
+    private WebView2? _bookView;
     private int _currentChapter = 0;
     private string _currentFilePath = "";
     private string _processedFullHtml = "";
@@ -30,10 +32,14 @@ public partial class BookReaderControl : UserControl
 
     private async void OnLoaded(object sender, RoutedEventArgs e)
     {
-        await BookView.EnsureCoreWebView2Async();
-        BookView.CoreWebView2.AddHostObjectToScript("bridge", new WebViewBridge(this));
-        BookView.WebMessageReceived += OnWebMessage;
-        await BookView.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync(GetReaderJavaScript());
+        // 动态创建 WebView2 控件，避免在 XAML 中声明拖慢窗口初始化
+        _bookView = new WebView2();
+        WebViewContainer.Children.Add(_bookView);
+
+        await _bookView.EnsureCoreWebView2Async();
+        _bookView.CoreWebView2.AddHostObjectToScript("bridge", new WebViewBridge(this));
+        _bookView.WebMessageReceived += OnWebMessage;
+        await _bookView.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync(GetReaderJavaScript());
         _webViewReady = true;
 
         // 如果有待加载的书，完成加载
@@ -71,10 +77,10 @@ public partial class BookReaderControl : UserControl
         ProgressText.Text = $"{chapterIndex + 1} / {_book.Chapters.Count}";
 
         // 首次加载或切换主题/字体时构建完整页面
-        if (!_webViewReady) return;
+        if (!_webViewReady || _bookView == null) return;
 
         string page = BuildFullPage();
-        BookView.NavigateToString(page);
+        _bookView.NavigateToString(page);
     }
 
     private string BuildFullPage()

@@ -1,0 +1,29 @@
+<Window x:Class="Azw3Reader.App.SplashWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="AZW3 阅读器"
+        Width="420" Height="280"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        WindowStartupLocation="CenterScreen"
+        ShowInTaskbar="False"
+        ResizeMode="NoResize">
+    <Border Background="#4a90d9" CornerRadius="12">
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="24" ShadowDepth="4" Opacity="0.35" Color="#222"/>
+        </Border.Effect>
+        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+            <TextBlock Text="📚" FontSize="52" TextAlignment="Center"/>
+            <TextBlock Text="AZW3 阅读器"
+                       FontSize="24" Foreground="White"
+                       FontWeight="SemiBold"
+                       Margin="0,14,0,0"
+                       TextAlignment="Center"/>
+            <TextBlock Text="正在加载..."
+                       FontSize="12" Foreground="#CCDDFF"
+                       Margin="0,8,0,0"
+                       TextAlignment="Center"/>
+        </StackPanel>
+    </Border>
+</Window>

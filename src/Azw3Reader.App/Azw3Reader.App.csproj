@@ -20,6 +20,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
     <ApplicationIcon>Resources\app-icon.ico</ApplicationIcon>
+    <PublishReadyToRun>true</PublishReadyToRun>
+    <SatelliteResourceLanguages>zh-Hans;zh-CN;en</SatelliteResourceLanguages>
   </PropertyGroup>
 
 </Project>
