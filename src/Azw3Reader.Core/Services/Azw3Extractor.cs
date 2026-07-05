@@ -57,7 +57,7 @@ public class Azw3Extractor
         else if (isPalmDoc)
             ExtractPalmDocContent(fileData, pdb, mobiHeader, result);
         else if (isHuffCdic)
-            ExtractRawContent(fileData, pdb, mobiHeader, result);
+            ExtractHuffCdicContent(fileData, pdb, mobiHeader, result);
         else
             throw new NotSupportedException($"不支持的压缩类型: {mobiHeader.CompressionType}。");
 
@@ -76,6 +76,8 @@ public class Azw3Extractor
         {
             var splitter = new ChapterSplitter();
             result.Chapters = splitter.Split(result.FullHtml);
+            // 为无原生锚点的标题注入 id，确保目录跳转生效
+            result.FullHtml = splitter.InjectAnchorIds(result.FullHtml, result.Chapters);
         }
 
         return result;
@@ -110,21 +112,7 @@ public class Azw3Extractor
             offset += buf.Length;
         }
 
-        // 确定编码
-        Encoding encoding = mobi.TextEncoding == 65001 ? Encoding.UTF8 :
-                            mobi.TextEncoding == 1252 ? Encoding.GetEncoding(1252) :
-                            Encoding.UTF8;
-
-        string fullHtml = encoding.GetString(allText);
-
-        // 清理: 跳过开头的非 HTML 内容
-        int htmlStart = fullHtml.IndexOf('<');
-        if (htmlStart > 0) fullHtml = fullHtml[htmlStart..];
-
-        // 清理多余的 null 字符
-        fullHtml = fullHtml.Replace("\0", "");
-
-        result.FullHtml = fullHtml;
+        result.FullHtml = DecodeBookText(allText, mobi.TextEncoding);
 
         // 提取图片
         ExtractImages(fileData, pdb, imgStart, result);
@@ -187,21 +175,7 @@ public class Azw3Extractor
             }
         }
 
-        // 确定编码
-        Encoding encoding = mobi.TextEncoding switch
-        {
-            65001 => Encoding.UTF8,
-            1252 => Encoding.GetEncoding(1252),
-            2 => Encoding.UTF8, // KF8 文件常标为 2，实际是 UTF-8
-            _ => Encoding.UTF8
-        };
-
-        string fullHtml = encoding.GetString(textData ?? []);
-        // 清理: 跳过前导非 HTML 内容
-        int htmlStart = fullHtml.IndexOf('<');
-        if (htmlStart > 0) fullHtml = fullHtml[htmlStart..];
-        fullHtml = fullHtml.Replace("\0", "").Trim();
-        result.FullHtml = fullHtml;
+        result.FullHtml = DecodeBookText(textData ?? [], mobi.TextEncoding, isKf8: true);
 
         // 保存图片
         foreach (var (idx, imgData) in imageParts)
@@ -262,13 +236,7 @@ public class Azw3Extractor
         foreach (var buf in textBuffers)
         { Buffer.BlockCopy(buf, 0, allText, offset, buf.Length); offset += buf.Length; }
 
-        Encoding encoding = mobi.TextEncoding == 65001 ? Encoding.UTF8 :
-                            mobi.TextEncoding == 1252 ? Encoding.GetEncoding(1252) : Encoding.UTF8;
-        string fullHtml = encoding.GetString(allText);
-        int htmlStart = fullHtml.IndexOf('<');
-        if (htmlStart > 0) fullHtml = fullHtml[htmlStart..];
-        fullHtml = fullHtml.Replace("\0", "");
-        result.FullHtml = fullHtml;
+        result.FullHtml = DecodeBookText(allText, mobi.TextEncoding);
 
         ExtractImages(fileData, pdb, imgStart, result);
     }
@@ -344,5 +312,66 @@ public class Azw3Extractor
         byte[] result = new byte[len];
         Buffer.BlockCopy(fileData, (int)entry.Offset, result, 0, len);
         return result;
+    }
+
+    /// <summary>
+    /// 智能编码解码：先按 MOBI 头指定的编码解码，若出现替换字符则退回 GBK/GB18030 尝试。
+    /// </summary>
+    private static string DecodeBookText(byte[] textData, uint textEncoding, bool isKf8 = false)
+    {
+        Encoding candidate;
+        if (textEncoding == 65001)
+            candidate = Encoding.UTF8;
+        else if (textEncoding == 1252)
+            candidate = Encoding.GetEncoding(1252);
+        else if (isKf8 && textEncoding == 2)
+            candidate = Encoding.UTF8; // KF8 文件常标为 2，实际是 UTF-8
+        else
+            candidate = Encoding.UTF8;
+
+        string result = candidate.GetString(textData);
+
+        // 检测前 10000 个字符中的替换字符数量
+        int replacementCount = 0;
+        int checkLen = Math.Min(result.Length, 10000);
+        for (int i = 0; i < checkLen; i++)
+        {
+            if (result[i] == '�') replacementCount++;
+            if (replacementCount > 5) break;
+        }
+
+        // 如果替换字符过多（>5），尝试中文编码
+        if (replacementCount > 5)
+        {
+            foreach (int codePage in new[] { 936, 54936 }) // GBK, GB18030
+            {
+                try
+                {
+                    var chineseEnc = Encoding.GetEncoding(codePage);
+                    string tryResult = chineseEnc.GetString(textData);
+
+                    // 快速判定：前 200 个字符中是否有中文字符
+                    int chineseCount = 0;
+                    int tryCheckLen = Math.Min(tryResult.Length, 200);
+                    for (int i = 0; i < tryCheckLen; i++)
+                        if (tryResult[i] >= 0x4E00 && tryResult[i] <= 0x9FFF) chineseCount++;
+
+                    if (chineseCount >= 2)
+                        return CleanHtml(tryResult);
+                }
+                catch { }
+            }
+        }
+
+        return CleanHtml(result);
+    }
+
+    /// <summary>清理 HTML 内容中的前导非 HTML 内容和 null 字符。</summary>
+    private static string CleanHtml(string raw)
+    {
+        int htmlStart = raw.IndexOf('<');
+        string cleaned = htmlStart > 0 ? raw[htmlStart..] : raw;
+        cleaned = cleaned.Replace("\0", "").Trim();
+        return cleaned;
     }
 }

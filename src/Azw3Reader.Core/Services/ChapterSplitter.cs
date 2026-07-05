@@ -170,18 +170,63 @@ public class ChapterSplitter
                 if (string.IsNullOrWhiteSpace(title) || title.Length > 100) continue;
 
                 string? id = h.GetAttributeValue("id", "") ?? h.GetAttributeValue("name", "");
-                if (string.IsNullOrEmpty(id)) continue;
 
                 result.Add(new Chapter
                 {
                     Title = title,
-                    Anchor = $"#{id}",
+                    // 没有原生 id 时用合成锚点，后续由 InjectAnchors 注入到 HTML 中
+                    Anchor = string.IsNullOrEmpty(id) ? $"#__ch{idx}" : $"#{id}",
                     Index = idx++
                 });
             }
             return result;
         }
         catch { return []; }
+    }
+
+    /// <summary>
+    /// 为 DetectByHeadings 生成的合成锚点（__chN）在 HTML 中注入对应的 id 属性。
+    /// 确保章节导航能正确定位。
+    /// </summary>
+    public string InjectAnchorIds(string html, List<Chapter> chapters)
+    {
+        var syntheticIds = new HashSet<string>(
+            chapters.Where(c => c.Anchor.StartsWith("#__ch")).Select(c => c.Anchor[1..]));
+
+        if (syntheticIds.Count == 0) return html;
+
+        try
+        {
+            var doc = new HtmlDocument();
+            doc.LoadHtml(html);
+
+            var headings = doc.DocumentNode.SelectNodes("//h1 | //h2 | //h3");
+            if (headings == null) return html;
+
+            int idx = 0;
+            foreach (var h in headings)
+            {
+                string title = HtmlEntity.DeEntitize(h.InnerText).Trim();
+                if (string.IsNullOrWhiteSpace(title) || title.Length > 100) continue;
+
+                string syntheticId = $"__ch{idx}";
+                if (syntheticIds.Contains(syntheticId))
+                {
+                    // 检查是否已有 id
+                    string existingId = h.GetAttributeValue("id", "");
+                    if (string.IsNullOrEmpty(existingId))
+                    {
+                        h.SetAttributeValue("id", syntheticId);
+                    }
+                }
+                idx++;
+            }
+
+            using var sw = new StringWriter();
+            doc.Save(sw);
+            return sw.ToString();
+        }
+        catch { return html; }
     }
 
     private static string ExtractAnchor(string href)
