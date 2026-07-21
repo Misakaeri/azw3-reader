@@ -1,13 +1,13 @@
-# AZW3 Reader — Windows 桌面版 Kindle 阅读器
+# AZW3 Reader — Windows 桌面版电子书阅读器
 
-基于 C# WPF + WebView2 的 AZW3/MOBI/KF8 格式电子书阅读器。
+基于 C# WPF + WebView2 的 AZW3/MOBI/KF8/EPUB 格式电子书阅读器。
 
 ## 环境要求
 
 - Windows 10/11
 - [.NET 8.0 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
 - Microsoft Edge WebView2（Windows 10/11 内置）
-- 支持的文件: `.azw3` / `.mobi` / `.azw` / `.kf8`（**不支持 DRM 加密文件**）
+- 支持的文件: `.epub` / `.azw3` / `.mobi` / `.azw` / `.kf8`（**不支持 DRM 加密文件**）
 
 ## 快速开始
 
@@ -36,7 +36,9 @@ src/
 │   │   ├── PalmDocDecompressor.cs   # PalmDoc LZ77 解压缩
 │   │   └── HuffCdicDecompressor.cs  # HUFF/CDIC Huffman 解压缩 (KF8)
 │   ├── Services/                 # 解析编排服务
-│   │   ├── Azw3Extractor.cs      # 主提取器：编排完整解析管道
+│   │   ├── Azw3Extractor.cs      # AZW3/MOBI 主提取器
+│   │   ├── EpubExtractor.cs      # EPUB 提取器（ZIP + OPF + spine/nav）
+│   │   ├── BookLoader.cs         # 按扩展名分发加载
 │   │   └── ChapterSplitter.cs    # 章节拆分（pagebreak / nav / 标题检测三级降级）
 │   └── BigEndian.cs              # 大端字节序辅助方法
 └── Azw3Reader.App/               # WPF UI 应用
@@ -58,17 +60,19 @@ src/
 ## 功能
 
 - [x] **AZW3/MOBI/KF8 格式解析** — PDB 容器 + MOBI 头 + EXTH 元数据
+- [x] **EPUB 格式解析** — ZIP + OPF + spine，目录支持 EPUB3 nav / EPUB2 NCX
 - [x] **三种压缩支持** — 无压缩 / PalmDoc (LZ77) / HUFF/CDIC (Huffman)
 - [x] **章节导航** — `<mbp:pagebreak>` 标记 → `<nav>` TOC → `<h1>/<h2>/<h3>` 标题检测，三级降级策略
-- [x] **图片提取与显示** — JPEG / PNG / GIF
+- [x] **图片提取与显示** — JPEG / PNG / GIF（EPUB 内联为 data URI）
 - [x] **10 种阅读主题** — 默认、灰色、羊皮纸、草绿、樱桃、天空、Solarized、Gruvbox、Nord、夜间
 - [x] **字体大小调节** — 12–36px，实时切换
 - [x] **左右区域点击翻页** — 左 33% 上一页，右 33% 下一页
 - [x] **键盘翻页** — 方向键 ← → / PageUp / PageDown
 - [x] **阅读进度保存与恢复** — 自动保存到 `%LOCALAPPDATA%/Azw3Reader/progress.json`
-- [x] **拖放打开文件** — 拖入 .azw3/.mobi/.azw/.kf8 文件即可打开
+- [x] **拖放打开文件** — 拖入 .epub/.azw3/.mobi/.azw/.kf8 文件即可打开
+- [x] **标记与笔记** — 选中文字可高亮或划线，点击标记可添加/编辑评论
+- [x] **标注导出 Markdown** — 工具栏「导出标注」生成本书全部摘录与笔记
 - [ ] 全文搜索
-- [ ] 书签与高亮
 
 ## 限制
 

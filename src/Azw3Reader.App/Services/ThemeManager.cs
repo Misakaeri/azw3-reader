@@ -32,6 +32,9 @@ public class ThemeManager
     {
         int idx = (int)CurrentTheme;
         var (_, bg, fg, link) = Themes[idx];
+        bool isDark = CurrentTheme == ThemeType.Dark;
+        string hlBg = isDark ? "rgba(255,255,255,.18)" : "rgba(0,0,0,.14)";
+        string ulColor = isDark ? "rgba(255,255,255,.65)" : "rgba(0,0,0,.55)";
 
         return $@"
 body {{
@@ -74,6 +77,27 @@ blockquote {{
 code, pre {{
     font-family: 'Consolas', 'Courier New', monospace;
     font-size: 0.9em;
+}}
+mark.azw3-hl {{
+    background: {hlBg};
+    color: inherit;
+    border-radius: 2px;
+    padding: 0 1px;
+}}
+mark.azw3-ul {{
+    background: transparent;
+    color: inherit;
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 3px;
+    text-decoration-color: {ulColor};
+}}
+mark.azw3-hl.has-note::after,
+mark.azw3-ul.has-note::after {{
+    content: '✎';
+    font-size: 0.75em;
+    margin-left: 2px;
+    opacity: 0.7;
 }}
 ";
     }

@@ -24,6 +24,13 @@
 
                     <Separator Width="1" Background="#ccc" Margin="4,2"/>
 
+                    <Button x:Name="ExportAnnotationsBtn" Content="导出标注"
+                            Height="22" FontSize="11" Padding="8,0"
+                            ToolTip="导出本书标记与笔记为 Markdown"
+                            Click="OnExportAnnotations" BorderThickness="0" Background="Transparent"/>
+
+                    <Separator Width="1" Background="#ccc" Margin="4,2"/>
+
                     <!-- 字体 -->
                     <Button x:Name="FontSmallBtn" Content="A−" Width="28" Height="22"
                             FontSize="10" ToolTip="缩小字体"

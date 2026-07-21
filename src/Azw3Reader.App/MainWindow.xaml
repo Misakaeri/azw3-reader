@@ -2,7 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ctrl="clr-namespace:Azw3Reader.App.Controls"
-        Title="AZW3 阅读器" Height="760" Width="1100"
+        Title="AZW3 阅读器" Height="760" Width="1200"
         MinHeight="500" MinWidth="700"
         WindowStartupLocation="CenterScreen"
         Background="#f5f5f5" FontFamily="Segoe UI"
@@ -27,18 +27,69 @@
                 </Setter.Value>
             </Setter>
         </Style>
+        <Style TargetType="Button" x:Key="RailButton">
+            <Setter Property="Background" Value="#f0f0f0"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Foreground" Value="#666"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style TargetType="Button" x:Key="TextLinkButton">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Padding" Value="8,4"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </Window.Resources>
 
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="240"/>
-            <ColumnDefinition Width="Auto"/>
-            <ColumnDefinition Width="*"/>
+            <!-- 左折叠条 -->
+            <ColumnDefinition x:Name="LeftRailCol" Width="28"/>
+            <!-- 左目录 -->
+            <ColumnDefinition x:Name="LeftPanelCol" Width="240" MinWidth="0"/>
+            <ColumnDefinition x:Name="LeftSplitCol" Width="3"/>
+            <!-- 阅读 -->
+            <ColumnDefinition Width="*" MinWidth="280"/>
+            <ColumnDefinition x:Name="RightSplitCol" Width="0"/>
+            <!-- 右笔记 -->
+            <ColumnDefinition x:Name="RightPanelCol" Width="0" MinWidth="0"/>
+            <!-- 右折叠条 -->
+            <ColumnDefinition x:Name="RightRailCol" Width="28"/>
         </Grid.ColumnDefinitions>
 
-        <!-- 左侧栏 -->
-        <Border Grid.Column="0" Background="#fafafa" BorderBrush="#e8e8e8" BorderThickness="0 0 1 0">
-            <Grid Margin="0">
+        <!-- 左侧折叠按钮 -->
+        <Border Grid.Column="0" Background="#f0f0f0" BorderBrush="#e8e8e8" BorderThickness="0,0,1,0">
+            <Button x:Name="ToggleLeftBtn" Style="{StaticResource RailButton}"
+                    Content="‹" ToolTip="折叠/展开目录"
+                    Click="OnToggleLeft" FontSize="16"/>
+        </Border>
+
+        <!-- 左侧目录栏 -->
+        <Border x:Name="LeftPanel" Grid.Column="1" Background="#fafafa"
+                BorderBrush="#e8e8e8" BorderThickness="0,0,1,0">
+            <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
@@ -46,18 +97,16 @@
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <!-- 顶栏：打开按钮 -->
                 <Border Grid.Row="0" Padding="12,12,12,6">
                     <StackPanel Orientation="Horizontal">
                         <Button x:Name="OpenBtn" Content="📂 打开"
                                 Style="{StaticResource PrimaryButton}"
                                 Click="OnOpenFile"/>
                         <TextBlock x:Name="FileFormatText" VerticalAlignment="Center"
-                                   FontSize="11" Foreground="#aaa"/>
+                                   FontSize="11" Foreground="#aaa" Margin="8,0,0,0"/>
                     </StackPanel>
                 </Border>
 
-                <!-- 书籍信息 -->
                 <Border Grid.Row="1" Margin="12,0,12,8" Padding="10"
                         Background="White" BorderBrush="#e8e8e8" BorderThickness="1"
                         CornerRadius="6">
@@ -71,12 +120,10 @@
                     </StackPanel>
                 </Border>
 
-                <!-- 目录标题 -->
                 <TextBlock Grid.Row="2" Text="目录" FontSize="11"
                            FontWeight="SemiBold" Foreground="#999"
                            Margin="14,0,12,4" VerticalAlignment="Top"/>
 
-                <!-- 目录列表 -->
                 <ListBox Grid.Row="2" x:Name="ChapterList"
                          BorderThickness="0" Background="Transparent"
                          SelectionChanged="OnChapterSelected"
@@ -92,7 +139,6 @@
                     </ListBox.ItemTemplate>
                 </ListBox>
 
-                <!-- 底部状态栏 -->
                 <Border Grid.Row="3" BorderBrush="#e8e8e8" BorderThickness="0,1,0,0"
                         Background="#f0f0f0" Padding="10,5">
                     <TextBlock x:Name="StatusBar" Text="就绪"
@@ -101,11 +147,85 @@
             </Grid>
         </Border>
 
-        <!-- 分隔线 -->
-        <GridSplitter Grid.Column="1" Width="3" Background="Transparent"
-                      HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+        <GridSplitter x:Name="LeftSplitter" Grid.Column="2" Width="3"
+                      Background="Transparent" HorizontalAlignment="Stretch"
+                      VerticalAlignment="Stretch" ShowsPreview="True"/>
 
         <!-- 阅读区域 -->
-        <ctrl:BookReaderControl Grid.Column="2" x:Name="ReaderControl" />
+        <ctrl:BookReaderControl Grid.Column="3" x:Name="ReaderControl"/>
+
+        <GridSplitter x:Name="RightSplitter" Grid.Column="4" Width="3"
+                      Background="Transparent" HorizontalAlignment="Stretch"
+                      VerticalAlignment="Stretch" ShowsPreview="True"
+                      Visibility="Collapsed"/>
+
+        <!-- 右侧笔记栏 -->
+        <Border x:Name="RightPanel" Grid.Column="5" Background="White"
+                BorderBrush="#e8e8e8" BorderThickness="1,0,0,0"
+                Visibility="Collapsed">
+            <Grid Margin="18,16">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <DockPanel Grid.Row="0" Margin="0,0,0,14">
+                    <TextBlock x:Name="NoteTitleText" DockPanel.Dock="Left"
+                               Text="笔记" FontSize="16" FontWeight="SemiBold"
+                               Foreground="#222" VerticalAlignment="Center"/>
+                    <Button DockPanel.Dock="Right" Content="✕" Style="{StaticResource TextLinkButton}"
+                            Foreground="#999" ToolTip="关闭笔记栏"
+                            Click="OnCloseNotePanel" Padding="6,2"/>
+                </DockPanel>
+
+                <Border Grid.Row="1" Margin="0,0,0,16" Padding="14,2,4,2"
+                        BorderBrush="#7B61FF" BorderThickness="3,0,0,0">
+                    <TextBlock x:Name="NoteExcerptText"
+                               TextWrapping="Wrap"
+                               FontSize="14"
+                               LineHeight="22"
+                               Foreground="#333"/>
+                </Border>
+
+                <Grid Grid.Row="2">
+                    <TextBox x:Name="NoteBox"
+                             AcceptsReturn="True"
+                             TextWrapping="Wrap"
+                             VerticalScrollBarVisibility="Disabled"
+                             HorizontalScrollBarVisibility="Disabled"
+                             FontSize="15"
+                             Padding="0"
+                             BorderThickness="0"
+                             Background="Transparent"
+                             VerticalContentAlignment="Top"
+                             TextChanged="OnNoteBoxChanged"/>
+                    <TextBlock x:Name="NotePlaceholder"
+                               Text="添加笔记..."
+                               FontSize="15"
+                               Foreground="#B0B0B0"
+                               IsHitTestVisible="False"
+                               VerticalAlignment="Top"/>
+                </Grid>
+
+                <DockPanel Grid.Row="3" Margin="0,12,0,0">
+                    <Button DockPanel.Dock="Left" Content="删除标记"
+                            Style="{StaticResource TextLinkButton}"
+                            Foreground="#999" Click="OnDeleteAnnotation"
+                            HorizontalAlignment="Left" Padding="0"/>
+                    <TextBlock x:Name="NoteHintText" DockPanel.Dock="Right"
+                               Text="自动保存" FontSize="11" Foreground="#bbb"
+                               VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                </DockPanel>
+            </Grid>
+        </Border>
+
+        <!-- 右侧折叠按钮 -->
+        <Border Grid.Column="6" Background="#f0f0f0" BorderBrush="#e8e8e8" BorderThickness="1,0,0,0">
+            <Button x:Name="ToggleRightBtn" Style="{StaticResource RailButton}"
+                    Content="›" ToolTip="折叠/展开笔记"
+                    Click="OnToggleRight" FontSize="16"/>
+        </Border>
     </Grid>
 </Window>
