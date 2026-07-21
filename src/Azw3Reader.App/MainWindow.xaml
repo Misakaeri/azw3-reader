@@ -61,6 +61,79 @@
                 </Setter.Value>
             </Setter>
         </Style>
+
+        <!-- 细滚动条：无上下箭头，滑块约 4px -->
+        <Style x:Key="ThinScrollBarThumb" TargetType="Thumb">
+            <Setter Property="OverridesDefaultStyle" Value="True"/>
+            <Setter Property="IsTabStop" Value="False"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Thumb">
+                        <Border x:Name="Pill" Background="#C8C8C8" CornerRadius="2" Margin="1,0"/>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Pill" Property="Background" Value="#A0A0A0"/>
+                            </Trigger>
+                            <Trigger Property="IsDragging" Value="True">
+                                <Setter TargetName="Pill" Property="Background" Value="#888888"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="ThinVerticalScrollBar" TargetType="ScrollBar">
+            <Setter Property="Width" Value="5"/>
+            <Setter Property="MinWidth" Value="5"/>
+            <Setter Property="Opacity" Value="0.55"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ScrollBar">
+                        <Grid Background="Transparent">
+                            <Track x:Name="PART_Track" IsDirectionReversed="True"
+                                   Focusable="False">
+                                <Track.DecreaseRepeatButton>
+                                    <RepeatButton Command="ScrollBar.PageUpCommand" Opacity="0" Height="0"/>
+                                </Track.DecreaseRepeatButton>
+                                <Track.Thumb>
+                                    <Thumb Style="{StaticResource ThinScrollBarThumb}"/>
+                                </Track.Thumb>
+                                <Track.IncreaseRepeatButton>
+                                    <RepeatButton Command="ScrollBar.PageDownCommand" Opacity="0" Height="0"/>
+                                </Track.IncreaseRepeatButton>
+                            </Track>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="ThinScrollViewer" TargetType="ScrollViewer">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ScrollViewer">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <ScrollContentPresenter Grid.Column="0"
+                                                    Margin="{TemplateBinding Padding}"
+                                                    CanContentScroll="{TemplateBinding CanContentScroll}"/>
+                            <ScrollBar x:Name="PART_VerticalScrollBar"
+                                       Grid.Column="1"
+                                       Style="{StaticResource ThinVerticalScrollBar}"
+                                       Orientation="Vertical"
+                                       ViewportSize="{TemplateBinding ViewportHeight}"
+                                       Maximum="{TemplateBinding ScrollableHeight}"
+                                       Value="{TemplateBinding VerticalOffset}"
+                                       Visibility="{TemplateBinding ComputedVerticalScrollBarVisibility}"/>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </Window.Resources>
 
     <Grid>
@@ -166,7 +239,6 @@
             <Grid Margin="18,16">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
@@ -180,36 +252,47 @@
                             Click="OnCloseNotePanel" Padding="6,2"/>
                 </DockPanel>
 
-                <Border Grid.Row="1" Margin="0,0,0,16" Padding="14,2,4,2"
-                        BorderBrush="#7B61FF" BorderThickness="3,0,0,0">
-                    <TextBlock x:Name="NoteExcerptText"
-                               TextWrapping="Wrap"
-                               FontSize="14"
-                               LineHeight="22"
-                               Foreground="#333"/>
-                </Border>
+                <!-- 摘录 + 笔记可滚动 -->
+                <ScrollViewer Grid.Row="1"
+                              Style="{StaticResource ThinScrollViewer}"
+                              VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled"
+                              CanContentScroll="False"
+                              PanningMode="VerticalOnly">
+                    <StackPanel>
+                        <Border Margin="0,0,0,16" Padding="14,2,8,2"
+                                BorderBrush="#7B61FF" BorderThickness="3,0,0,0">
+                            <TextBlock x:Name="NoteExcerptText"
+                                       TextWrapping="Wrap"
+                                       FontSize="14"
+                                       LineHeight="22"
+                                       Foreground="#333"/>
+                        </Border>
 
-                <Grid Grid.Row="2">
-                    <TextBox x:Name="NoteBox"
-                             AcceptsReturn="True"
-                             TextWrapping="Wrap"
-                             VerticalScrollBarVisibility="Disabled"
-                             HorizontalScrollBarVisibility="Disabled"
-                             FontSize="15"
-                             Padding="0"
-                             BorderThickness="0"
-                             Background="Transparent"
-                             VerticalContentAlignment="Top"
-                             TextChanged="OnNoteBoxChanged"/>
-                    <TextBlock x:Name="NotePlaceholder"
-                               Text="添加笔记..."
-                               FontSize="15"
-                               Foreground="#B0B0B0"
-                               IsHitTestVisible="False"
-                               VerticalAlignment="Top"/>
-                </Grid>
+                        <Grid MinHeight="160">
+                            <TextBox x:Name="NoteBox"
+                                     AcceptsReturn="True"
+                                     TextWrapping="Wrap"
+                                     VerticalScrollBarVisibility="Disabled"
+                                     HorizontalScrollBarVisibility="Disabled"
+                                     FontSize="15"
+                                     MinHeight="160"
+                                     Padding="0,0,8,0"
+                                     BorderThickness="0"
+                                     Background="Transparent"
+                                     VerticalContentAlignment="Top"
+                                     TextChanged="OnNoteBoxChanged"/>
+                            <TextBlock x:Name="NotePlaceholder"
+                                       Text="添加笔记..."
+                                       FontSize="15"
+                                       Foreground="#B0B0B0"
+                                       IsHitTestVisible="False"
+                                       VerticalAlignment="Top"/>
+                        </Grid>
+                    </StackPanel>
+                </ScrollViewer>
 
-                <DockPanel Grid.Row="3" Margin="0,12,0,0">
+                <DockPanel Grid.Row="2" Margin="0,12,0,0">
                     <Button DockPanel.Dock="Left" Content="删除标记"
                             Style="{StaticResource TextLinkButton}"
                             Foreground="#999" Click="OnDeleteAnnotation"

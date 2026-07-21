@@ -5,8 +5,10 @@ using Azw3Reader.App.ViewModels;
 using Azw3Reader.Core.Models;
 using Azw3Reader.Core.Services;
 using Microsoft.Win32;
+using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 using System.Windows.Threading;
 
 namespace Azw3Reader.App;
@@ -220,14 +222,19 @@ public partial class MainWindow : Window
         }
         UpdateNotePlaceholder();
         ApplyRightCollapsed(false);
-        NoteBox.Focus();
-        NoteBox.CaretIndex = NoteBox.Text.Length;
+        Dispatcher.BeginInvoke(() =>
+        {
+            AdjustNoteBoxHeight();
+            NoteBox.Focus();
+            NoteBox.CaretIndex = NoteBox.Text.Length;
+        }, DispatcherPriority.Loaded);
         StatusBar.Text = "已打开笔记";
     }
 
     private void OnNoteBoxChanged(object sender, TextChangedEventArgs e)
     {
         UpdateNotePlaceholder();
+        AdjustNoteBoxHeight();
         if (_syncingNoteBox || _activeAnnotation == null) return;
         _noteSaveTimer.Stop();
         _noteSaveTimer.Start();
@@ -239,6 +246,33 @@ public partial class MainWindow : Window
         NotePlaceholder.Visibility = string.IsNullOrEmpty(NoteBox.Text)
             ? Visibility.Visible
             : Visibility.Collapsed;
+    }
+
+    /// <summary>笔记框随内容增高，由外层 ScrollViewer 提供滚动条。</summary>
+    private void AdjustNoteBoxHeight()
+    {
+        double width = NoteBox.ActualWidth;
+        if (width <= 1)
+            width = Math.Max(120, RightPanelCol.Width.Value > 40 ? RightPanelCol.Width.Value - 44 : 260);
+
+        string measureText = string.IsNullOrEmpty(NoteBox.Text) ? " " : NoteBox.Text;
+        if (!measureText.EndsWith('\n'))
+            measureText += "\n";
+
+        var dpi = VisualTreeHelper.GetDpi(this);
+        var formatted = new FormattedText(
+            measureText,
+            CultureInfo.CurrentUICulture,
+            FlowDirection.LeftToRight,
+            new Typeface(NoteBox.FontFamily, NoteBox.FontStyle, NoteBox.FontWeight, NoteBox.FontStretch),
+            NoteBox.FontSize,
+            Brushes.Black,
+            dpi.PixelsPerDip)
+        {
+            MaxTextWidth = width
+        };
+
+        NoteBox.Height = Math.Max(160, Math.Ceiling(formatted.Height) + 8);
     }
 
     private void SaveActiveNote()
